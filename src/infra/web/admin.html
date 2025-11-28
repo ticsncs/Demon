@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-gray-800 text-white p-5">
+            <h2 class="text-xl font-bold mb-10">Admin Menu</h2>
+            <ul>
+                <li class="mb-4"><a href="#" class="hover:text-blue-300">Dashboard</a></li>
+                <li class="mb-4"><a href="#" class="hover:text-blue-300">Services</a></li>
+                <li class="mb-4"><a href="#" class="hover:text-blue-300">Settings</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-10">
+            <div class="flex justify-between items-center mb-10">
+                <h1 class="text-3xl font-bold">Services Dashboard</h1>
+                <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                    Logout
+                </button>
+            </div>
+
+            <!-- Service Management Table -->
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold">Manage Services</h2>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Add New Service
+                    </button>
+                </div>
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="py-2 px-4">Service Name</th>
+                            <th class="py-2 px-4">Description</th>
+                            <th class="py-2 px-4">Status</th>
+                            <th class="py-2 px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Service items will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            const response = await fetch('/admin/logout', {
+                method: 'POST',
+            });
+
+            if (response.ok) {
+                window.location.href = '/admin/login';
+            }
+        });
+    </script>
+</body>
+</html>
