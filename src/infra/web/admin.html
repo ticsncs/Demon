@@ -108,13 +108,13 @@
                 const response = await fetch('/api/services');
                 if (response.ok) {
                     const services = await response.json();
-                    // Para cada servicio, checar el estado del favicon
+                    // Para cada servicio, checar el estado usando /api/healt/
                     await Promise.all(services.map(async service => {
                         let status = 'Desconocido';
                         let statusColor = 'bg-gray-200 text-gray-800';
                         try {
-                            const res = await fetch(service.url.replace(/\/$/, '') + '/favicon.ico', { method: 'HEAD', mode: 'no-cors' });
-                            // Si el navegador permite ver status
+                            const healthUrl = service.url.replace(/\/$/, '') + '/api/healt/';
+                            const res = await fetch(healthUrl, { method: 'GET' });
                             if (res.status === 200) {
                                 status = 'Activo';
                                 statusColor = 'bg-green-200 text-green-800';
@@ -129,7 +129,6 @@
                                 statusColor = 'bg-gray-200 text-gray-800';
                             }
                         } catch (e) {
-                            // Si fetch falla, lo consideramos caído
                             status = 'Caído';
                             statusColor = 'bg-red-200 text-red-800';
                         }
