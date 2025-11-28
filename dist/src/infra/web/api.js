@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -42,9 +42,84 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = require("express");
 var database_1 = require("../db/database");
 var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+var crypto_1 = __importDefault(require("crypto"));
 var router = (0, express_1.Router)();
+// Listar todos los servicios
+router.get('/services', function (_req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var services, err_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, database_1.db.all('SELECT id, name, url FROM services')];
+            case 1:
+                services = _a.sent();
+                res.json(services);
+                return [3 /*break*/, 3];
+            case 2:
+                err_1 = _a.sent();
+                console.error('[API] Error al listar servicios:', err_1);
+                res.status(500).json({ error: 'Internal server error' });
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+// Listar todos los servicios
+router.get('/services', function (_req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var services, err_2;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, database_1.db.all('SELECT id, name, url FROM services')];
+            case 1:
+                services = _a.sent();
+                res.json(services);
+                return [3 /*break*/, 3];
+            case 2:
+                err_2 = _a.sent();
+                console.error('[API] Error al listar servicios:', err_2);
+                res.status(500).json({ error: 'Internal server error' });
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+router.post('/services', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, name, url, token, err_3;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _a = req.body, name = _a.name, url = _a.url;
+                if (!name || !url) {
+                    return [2 /*return*/, res.status(400).json({ error: 'Name and url are required' })];
+                }
+                _b.label = 1;
+            case 1:
+                _b.trys.push([1, 3, , 4]);
+                token = crypto_1.default.randomBytes(32).toString('hex');
+                // Guardar en la base de datos
+                return [4 /*yield*/, database_1.db.run('INSERT INTO services (name, url, token) VALUES (?, ?, ?)', name, url, token)];
+            case 2:
+                // Guardar en la base de datos
+                _b.sent();
+                res.status(201).json({ name: name, url: url, token: token });
+                return [3 /*break*/, 4];
+            case 3:
+                err_3 = _b.sent();
+                if (err_3.code === 'SQLITE_CONSTRAINT') {
+                    return [2 /*return*/, res.status(409).json({ error: 'Service name already exists' })];
+                }
+                console.error('[API] Error al crear servicio:', err_3);
+                res.status(500).json({ error: 'Internal server error' });
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); });
 router.post('/config', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var serviceName, authHeader, token, service_1, err_1;
+    var serviceName, authHeader, token, service_1, err_4;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -71,8 +146,8 @@ router.post('/config', function (req, res) { return __awaiter(void 0, void 0, vo
                 });
                 return [3 /*break*/, 4];
             case 3:
-                err_1 = _a.sent();
-                console.error(err_1);
+                err_4 = _a.sent();
+                console.error(err_4);
                 res.status(500).json({ error: 'Internal server error' });
                 return [3 /*break*/, 4];
             case 4: return [2 /*return*/];

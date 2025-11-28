@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -45,30 +45,42 @@ var session_1 = require("../../domain/session");
 var bcrypt_1 = __importDefault(require("bcrypt"));
 var router = (0, express_1.Router)();
 router.post('/login', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, username, password, user, _b, session;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
+    var _a, username, password, user, passwordMatch, session, err_1;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 _a = req.body, username = _a.username, password = _a.password;
-                return [4 /*yield*/, database_1.db.get('SELECT * FROM users WHERE username = ?', username)];
+                console.log('[LOGIN] Intento de login:', { username: username });
+                _b.label = 1;
             case 1:
-                user = _c.sent();
-                _b = user;
-                if (!_b) return [3 /*break*/, 3];
-                return [4 /*yield*/, bcrypt_1.default.compare(password, user.password)];
+                _b.trys.push([1, 5, , 6]);
+                return [4 /*yield*/, database_1.db.get('SELECT * FROM users WHERE username = ?', username)];
             case 2:
-                _b = (_c.sent());
-                _c.label = 3;
+                user = _b.sent();
+                console.log('[LOGIN] Usuario encontrado:', user ? user.username : 'No encontrado');
+                if (!user) return [3 /*break*/, 4];
+                return [4 /*yield*/, bcrypt_1.default.compare(password, user.password)];
             case 3:
-                if (_b) {
+                passwordMatch = _b.sent();
+                console.log('[LOGIN] Resultado bcrypt:', passwordMatch);
+                if (passwordMatch) {
                     session = (0, session_1.createSession)(user.id);
-                    res.cookie('sessionId', session.id, { httpOnly: true, secure: true, sameSite: 'strict' });
+                    console.log('[LOGIN] Sesión creada:', session.id);
+                    res.cookie('sessionId', session.id, { httpOnly: true, sameSite: 'strict' });
                     res.status(200).send({ message: 'Logged in' });
+                    return [2 /*return*/];
                 }
-                else {
-                    res.status(401).send({ error: 'Invalid credentials' });
-                }
-                return [2 /*return*/];
+                _b.label = 4;
+            case 4:
+                console.log('[LOGIN] Credenciales inválidas');
+                res.status(401).send({ error: 'Invalid credentials' });
+                return [3 /*break*/, 6];
+            case 5:
+                err_1 = _b.sent();
+                console.error('[LOGIN] Error en login:', err_1);
+                res.status(500).send({ error: 'Internal server error' });
+                return [3 /*break*/, 6];
+            case 6: return [2 /*return*/];
         }
     });
 }); });

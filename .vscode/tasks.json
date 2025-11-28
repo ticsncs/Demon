@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Ejecutar aplicación TypeScript",
+			"type": "shell",
+			"command": "npx ts-node src/index.ts"
+		}
+	]
+}
