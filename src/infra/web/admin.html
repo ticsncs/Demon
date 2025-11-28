@@ -19,55 +19,7 @@
                             </form>
                         </div>
                     </div>
-        // Modal de edición lógica
-        const editServiceModal = document.getElementById('editServiceModal');
-        const editServiceForm = document.getElementById('editServiceForm');
-        const cancelEditService = document.getElementById('cancelEditService');
-        const editServiceId = document.getElementById('editServiceId');
-        const editServiceName = document.getElementById('editServiceName');
-        const editServiceUrl = document.getElementById('editServiceUrl');
-
-        // Delegación de eventos para botones Editar
-        document.getElementById('servicesTableBody').addEventListener('click', (e) => {
-            if (e.target.classList.contains('editServiceBtn')) {
-                const id = e.target.getAttribute('data-id');
-                // Buscar datos actuales en la tabla
-                const row = e.target.closest('tr');
-                const name = row.children[0].textContent;
-                const url = row.children[1].textContent;
-                editServiceId.value = id;
-                editServiceName.value = name;
-                editServiceUrl.value = url;
-                editServiceModal.classList.remove('hidden');
-            }
-        });
-        cancelEditService.addEventListener('click', () => {
-            editServiceModal.classList.add('hidden');
-            editServiceForm.reset();
-        });
-        editServiceForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = editServiceId.value;
-            const name = editServiceName.value;
-            const url = editServiceUrl.value;
-            try {
-                const response = await fetch(`/api/services/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, url })
-                });
-                if (response.ok) {
-                    editServiceModal.classList.add('hidden');
-                    editServiceForm.reset();
-                    loadServices();
-                } else {
-                    const error = await response.json();
-                    alert('Error: ' + (error.error || 'No se pudo actualizar el servicio.'));
-                }
-            } catch (err) {
-                alert('Error de red o servidor.');
-            }
-        });
+      
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -218,6 +170,56 @@
                 } else {
                     const error = await response.json();
                     alert('Error: ' + (error.error || 'No se pudo crear el servicio.'));
+                }
+            } catch (err) {
+                alert('Error de red o servidor.');
+            }
+        });
+
+        // Modal de edición lógica (ahora correctamente dentro del <script>)
+        const editServiceModal = document.getElementById('editServiceModal');
+        const editServiceForm = document.getElementById('editServiceForm');
+        const cancelEditService = document.getElementById('cancelEditService');
+        const editServiceId = document.getElementById('editServiceId');
+        const editServiceName = document.getElementById('editServiceName');
+        const editServiceUrl = document.getElementById('editServiceUrl');
+
+        // Delegación de eventos para botones Editar
+        document.getElementById('servicesTableBody').addEventListener('click', (e) => {
+            if (e.target.classList.contains('editServiceBtn')) {
+                const id = e.target.getAttribute('data-id');
+                // Buscar datos actuales en la tabla
+                const row = e.target.closest('tr');
+                const name = row.children[0].textContent;
+                const url = row.children[1].textContent;
+                editServiceId.value = id;
+                editServiceName.value = name;
+                editServiceUrl.value = url;
+                editServiceModal.classList.remove('hidden');
+            }
+        });
+        cancelEditService.addEventListener('click', () => {
+            editServiceModal.classList.add('hidden');
+            editServiceForm.reset();
+        });
+        editServiceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = editServiceId.value;
+            const name = editServiceName.value;
+            const url = editServiceUrl.value;
+            try {
+                const response = await fetch(`/api/services/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, url })
+                });
+                if (response.ok) {
+                    editServiceModal.classList.add('hidden');
+                    editServiceForm.reset();
+                    loadServices();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.error || 'No se pudo actualizar el servicio.'));
                 }
             } catch (err) {
                 alert('Error de red o servidor.');

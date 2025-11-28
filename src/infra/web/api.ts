@@ -1,5 +1,3 @@
-
-
 import { Router } from 'express';
 import { db } from '../db/database';
 import { Service } from '../../core/services';
@@ -7,6 +5,28 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
 const router = Router();
+
+// Actualizar un servicio existente
+router.put('/services/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, url } = req.body;
+  if (!name || !url) {
+    return res.status(400).json({ error: 'Name and url are required' });
+  }
+  try {
+    const result = await db.run('UPDATE services SET name = ?, url = ? WHERE id = ?', name, url, id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    res.json({ id, name, url });
+  } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT') {
+      return res.status(409).json({ error: 'Service name already exists' });
+    }
+    console.error('[API] Error al actualizar servicio:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Listar todos los servicios
 router.get('/services', async (_req, res) => {
