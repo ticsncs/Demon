@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import { db } from '../db/database';
 import { Service } from '../../core/services';
@@ -5,6 +6,21 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
 const router = Router();
+
+// Obtener un servicio por id (incluye token)
+router.get('/services/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const service = await db.get('SELECT id, name, url, token FROM services WHERE id = ?', id);
+    if (!service) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    res.json(service);
+  } catch (err) {
+    console.error('[API] Error al obtener servicio:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Actualizar un servicio existente
 router.put('/services/:id', async (req, res) => {

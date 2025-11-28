@@ -1,7 +1,7 @@
                     <!-- Modal para editar servicio -->
                     <div id="editServiceModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
                         <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-                            <h3 class="text-xl font-bold mb-4">Editar Servicio</h3>
+                            <h3 id="editServiceModalTitle" class="text-xl font-bold mb-4">Editar Servicio</h3>
                             <form id="editServiceForm" class="space-y-4">
                                 <input type="hidden" id="editServiceId" name="editServiceId" />
                                 <div>
@@ -12,9 +12,13 @@
                                     <label class="block text-gray-700">URL</label>
                                     <input id="editServiceUrl" name="editServiceUrl" type="url" required class="w-full px-3 py-2 border rounded" />
                                 </div>
+                                <div id="editServiceTokenDiv" style="display:none">
+                                    <label class="block text-gray-700">Token</label>
+                                    <input id="editServiceToken" name="editServiceToken" type="text" readonly class="w-full px-3 py-2 border rounded bg-gray-100" />
+                                </div>
                                 <div class="flex justify-end space-x-2">
-                                    <button type="button" id="cancelEditService" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
-                                    <button type="submit" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Guardar Cambios</button>
+                                    <button type="button" id="cancelEditService" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cerrar</button>
+                                    <button type="submit" id="editServiceSaveBtn" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Guardar Cambios</button>
                                 </div>
                             </form>
                         </div>
@@ -104,20 +108,43 @@
                 const response = await fetch('/api/services');
                 if (response.ok) {
                     const services = await response.json();
-                    services.forEach(service => {
+                    // Para cada servicio, checar el estado del favicon
+                    await Promise.all(services.map(async service => {
+                        let status = 'Desconocido';
+                        let statusColor = 'bg-gray-200 text-gray-800';
+                        try {
+                            const res = await fetch(service.url.replace(/\/$/, '') + '/favicon.ico', { method: 'HEAD', mode: 'no-cors' });
+                            // Si el navegador permite ver status
+                            if (res.status === 200) {
+                                status = 'Activo';
+                                statusColor = 'bg-green-200 text-green-800';
+                            } else if (res.status >= 400 && res.status < 500) {
+                                status = 'Levantado';
+                                statusColor = 'bg-yellow-200 text-yellow-800';
+                            } else if (res.status >= 500) {
+                                status = 'Caído';
+                                statusColor = 'bg-red-200 text-red-800';
+                            } else {
+                                status = 'Desconocido';
+                                statusColor = 'bg-gray-200 text-gray-800';
+                            }
+                        } catch (e) {
+                            // Si fetch falla, lo consideramos caído
+                            status = 'Caído';
+                            statusColor = 'bg-red-200 text-red-800';
+                        }
                         const tr = document.createElement('tr');
-                        const status = service.status === false ? 'Inactivo' : 'Activo';
-                        const statusColor = service.status === false ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800';
                         tr.innerHTML = `
                             <td class="py-2 px-4">${service.name}</td>
                             <td class="py-2 px-4">${service.url}</td>
                             <td class="py-2 px-4"><span class="px-2 py-1 rounded ${statusColor}">${status}</span></td>
                             <td class="py-2 px-4">
                                 <button class="editServiceBtn bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded" data-id="${service.id}">Editar</button>
+                                <button class="viewServiceBtn bg-blue-400 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded ml-2" data-id="${service.id}">Ver</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
-                    });
+                    }));
                 } else {
                     tbody.innerHTML = '<tr><td colspan="4" class="text-center py-2">No se pudieron cargar los servicios</td></tr>';
                 }
@@ -126,8 +153,9 @@
             }
         }
 
-        // Cargar servicios al iniciar
+        // Cargar servicios al iniciar y refrescar cada 5 minutos
         loadServices();
+        setInterval(loadServices, 5 * 60 * 1000);
         // Logout
         document.getElementById('logoutButton').addEventListener('click', async () => {
             const response = await fetch('/admin/logout', {
@@ -185,6 +213,37 @@
         const editServiceUrl = document.getElementById('editServiceUrl');
 
         // Delegación de eventos para botones Editar
+        // Delegación de eventos para botón Ver
+        document.getElementById('servicesTableBody').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('viewServiceBtn')) {
+                const id = e.target.getAttribute('data-id');
+                // Obtener datos del servicio desde el backend (incluye token)
+                try {
+                    const response = await fetch(`/api/services/${id}`);
+                    if (response.ok) {
+                        const service = await response.json();
+                        editServiceId.value = service.id;
+                        editServiceName.value = service.name;
+                        editServiceUrl.value = service.url;
+                        editServiceToken.value = service.token || '';
+                        document.getElementById('editServiceTokenDiv').style.display = '';
+                        // Deshabilitar campos
+                        editServiceName.disabled = true;
+                        editServiceUrl.disabled = true;
+                        editServiceForm.querySelectorAll('input,button').forEach(el => {
+                            if (el.id !== 'cancelEditService') el.disabled = true;
+                        });
+                        document.getElementById('editServiceModalTitle').textContent = 'Ver Servicio';
+                        document.getElementById('editServiceSaveBtn').style.display = 'none';
+                        editServiceModal.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    alert('Error al obtener el servicio.');
+                }
+            }
+        });
+
+        // Al abrir para editar, ocultar token y habilitar campos
         document.getElementById('servicesTableBody').addEventListener('click', (e) => {
             if (e.target.classList.contains('editServiceBtn')) {
                 const id = e.target.getAttribute('data-id');
@@ -195,6 +254,12 @@
                 editServiceId.value = id;
                 editServiceName.value = name;
                 editServiceUrl.value = url;
+                document.getElementById('editServiceTokenDiv').style.display = 'none';
+                editServiceName.disabled = false;
+                editServiceUrl.disabled = false;
+                editServiceForm.querySelectorAll('input,button').forEach(el => { el.disabled = false; });
+                document.getElementById('editServiceModalTitle').textContent = 'Editar Servicio';
+                document.getElementById('editServiceSaveBtn').style.display = '';
                 editServiceModal.classList.remove('hidden');
             }
         });
