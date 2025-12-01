@@ -7,6 +7,22 @@ import crypto from 'crypto';
 
 const router = Router();
 
+// Obtener un servicio por nombre
+router.get('/services/name/:name', async (req, res) => {
+  const { name } = req.params;
+  try {
+    //Consulta para ver todos los sercios
+    const service = await db.get('SELECT id, name, url, token FROM services WHERE name = ?', name);
+    if (!service) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    res.json(service);
+  } catch (err) {
+    console.error('[API] Error al obtener servicio por nombre:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Obtener un servicio por id (incluye token)
 router.get('/services/:id', async (req, res) => {
   const { id } = req.params;
