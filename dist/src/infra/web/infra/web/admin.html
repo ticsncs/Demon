@@ -1,0 +1,294 @@
+                    <!-- Modal para editar servicio -->
+                    <div id="editServiceModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+                        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+                            <h3 id="editServiceModalTitle" class="text-xl font-bold mb-4">Editar Servicio</h3>
+                            <form id="editServiceForm" class="space-y-4">
+                                <input type="hidden" id="editServiceId" name="editServiceId" />
+                                <div>
+                                    <label class="block text-gray-700">Nombre del Servicio</label>
+                                    <input id="editServiceName" name="editServiceName" type="text" required class="w-full px-3 py-2 border rounded" />
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700">URL</label>
+                                    <input id="editServiceUrl" name="editServiceUrl" type="url" required class="w-full px-3 py-2 border rounded" />
+                                </div>
+                                <div id="editServiceTokenDiv" style="display:none">
+                                    <label class="block text-gray-700">Token</label>
+                                    <input id="editServiceToken" name="editServiceToken" type="text" readonly class="w-full px-3 py-2 border rounded bg-gray-100" />
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancelEditService" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cerrar</button>
+                                    <button type="submit" id="editServiceSaveBtn" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+      
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-gray-800 text-white p-5">
+            <h2 class="text-xl font-bold mb-10">Admin Menu</h2>
+            <ul>
+                <li class="mb-4"><a href="#" class="hover:text-blue-300">Dashboard</a></li>
+                <li class="mb-4"><a href="#" class="hover:text-blue-300">Services</a></li>
+                <li class="mb-4"><a href="#" class="hover:text-blue-300">Settings</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-10">
+            <div class="flex justify-between items-center mb-10">
+                <h1 class="text-3xl font-bold">Services Dashboard</h1>
+                <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                    Logout
+                </button>
+            </div>
+
+            <!-- Service Management Table -->
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold">Manage Services</h2>
+                    <button id="addServiceButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Add New Service
+                    </button>
+                    <!-- Modal para crear nuevo servicio -->
+                    <div id="addServiceModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+                        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+                            <h3 class="text-xl font-bold mb-4">Nuevo Servicio</h3>
+                            <form id="addServiceForm" class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-700">Nombre del Servicio</label>
+                                    <input id="serviceName" name="serviceName" type="text" required class="w-full px-3 py-2 border rounded" />
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700">URL</label>
+                                    <input id="serviceUrl" name="serviceUrl" type="url" required class="w-full px-3 py-2 border rounded" />
+                                </div>
+                                <!-- El token ya no se pide, se mostrará tras crear el servicio -->
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancelAddService" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="py-2 px-4">Service Name</th>
+                            <th class="py-2 px-4">Description</th>
+                            <th class="py-2 px-4">Status</th>
+                            <th class="py-2 px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="servicesTableBody">
+                        <!-- Service items will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Renderizar servicios en la tabla
+        async function loadServices() {
+            const tbody = document.getElementById('servicesTableBody');
+            tbody.innerHTML = '';
+            try {
+                const response = await fetch('/api/services');
+                if (response.ok) {
+                    const services = await response.json();
+                    // Para cada servicio, checar el estado usando /api/healt/
+                    await Promise.all(services.map(async service => {
+                        let status = 'Desconocido';
+                        let statusColor = 'bg-gray-200 text-gray-800';
+                        try {
+                            const healthUrl = service.url.replace(/\/$/, '') + '/api/healt/';
+                            const res = await fetch(healthUrl, { method: 'GET' });
+                            if (res.status === 200) {
+                                status = 'Activo';
+                                statusColor = 'bg-green-200 text-green-800';
+                            } else if (res.status >= 400 && res.status < 500) {
+                                status = 'Levantado';
+                                statusColor = 'bg-yellow-200 text-yellow-800';
+                            } else if (res.status >= 500) {
+                                status = 'Caído';
+                                statusColor = 'bg-red-200 text-red-800';
+                            } else {
+                                status = 'Desconocido';
+                                statusColor = 'bg-gray-200 text-gray-800';
+                            }
+                        } catch (e) {
+                            status = 'Caído';
+                            statusColor = 'bg-red-200 text-red-800';
+                        }
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="py-2 px-4">${service.name}</td>
+                            <td class="py-2 px-4">${service.url}</td>
+                            <td class="py-2 px-4"><span class="px-2 py-1 rounded ${statusColor}">${status}</span></td>
+                            <td class="py-2 px-4">
+                                <button class="editServiceBtn bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded" data-id="${service.id}">Editar</button>
+                                <button class="viewServiceBtn bg-blue-400 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded ml-2" data-id="${service.id}">Ver</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    }));
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-2">No se pudieron cargar los servicios</td></tr>';
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-2">Error de red</td></tr>';
+            }
+        }
+
+        // Cargar servicios al iniciar y refrescar cada 5 minutos
+        loadServices();
+        setInterval(loadServices, 5 * 60 * 1000);
+        // Logout
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            const response = await fetch('/admin/logout', {
+                method: 'POST',
+            });
+            if (response.ok) {
+                window.location.href = '/admin/login';
+            }
+        });
+
+        // Modal lógica
+        const addServiceButton = document.getElementById('addServiceButton');
+        const addServiceModal = document.getElementById('addServiceModal');
+        const cancelAddService = document.getElementById('cancelAddService');
+        const addServiceForm = document.getElementById('addServiceForm');
+
+        addServiceButton.addEventListener('click', () => {
+            addServiceModal.classList.remove('hidden');
+        });
+        cancelAddService.addEventListener('click', () => {
+            addServiceModal.classList.add('hidden');
+            addServiceForm.reset();
+        });
+        addServiceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = addServiceForm.serviceName.value;
+            const url = addServiceForm.serviceUrl.value;
+            try {
+                const response = await fetch('/api/services', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, url })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    addServiceModal.classList.add('hidden');
+                    addServiceForm.reset();
+                    alert('Servicio creado exitosamente. Token generado:\n' + data.token);
+                    loadServices();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.error || 'No se pudo crear el servicio.'));
+                }
+            } catch (err) {
+                alert('Error de red o servidor.');
+            }
+        });
+
+        // Modal de edición lógica (ahora correctamente dentro del <script>)
+        const editServiceModal = document.getElementById('editServiceModal');
+        const editServiceForm = document.getElementById('editServiceForm');
+        const cancelEditService = document.getElementById('cancelEditService');
+        const editServiceId = document.getElementById('editServiceId');
+        const editServiceName = document.getElementById('editServiceName');
+        const editServiceUrl = document.getElementById('editServiceUrl');
+
+        // Delegación de eventos para botones Editar
+        // Delegación de eventos para botón Ver
+        document.getElementById('servicesTableBody').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('viewServiceBtn')) {
+                const id = e.target.getAttribute('data-id');
+                // Obtener datos del servicio desde el backend (incluye token)
+                try {
+                    const response = await fetch(`/api/services/${id}`);
+                    if (response.ok) {
+                        const service = await response.json();
+                        editServiceId.value = service.id;
+                        editServiceName.value = service.name;
+                        editServiceUrl.value = service.url;
+                        editServiceToken.value = service.token || '';
+                        document.getElementById('editServiceTokenDiv').style.display = '';
+                        // Deshabilitar campos
+                        editServiceName.disabled = true;
+                        editServiceUrl.disabled = true;
+                        editServiceForm.querySelectorAll('input,button').forEach(el => {
+                            if (el.id !== 'cancelEditService') el.disabled = true;
+                        });
+                        document.getElementById('editServiceModalTitle').textContent = 'Ver Servicio';
+                        document.getElementById('editServiceSaveBtn').style.display = 'none';
+                        editServiceModal.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    alert('Error al obtener el servicio.');
+                }
+            }
+        });
+
+        // Al abrir para editar, ocultar token y habilitar campos
+        document.getElementById('servicesTableBody').addEventListener('click', (e) => {
+            if (e.target.classList.contains('editServiceBtn')) {
+                const id = e.target.getAttribute('data-id');
+                // Buscar datos actuales en la tabla
+                const row = e.target.closest('tr');
+                const name = row.children[0].textContent;
+                const url = row.children[1].textContent;
+                editServiceId.value = id;
+                editServiceName.value = name;
+                editServiceUrl.value = url;
+                document.getElementById('editServiceTokenDiv').style.display = 'none';
+                editServiceName.disabled = false;
+                editServiceUrl.disabled = false;
+                editServiceForm.querySelectorAll('input,button').forEach(el => { el.disabled = false; });
+                document.getElementById('editServiceModalTitle').textContent = 'Editar Servicio';
+                document.getElementById('editServiceSaveBtn').style.display = '';
+                editServiceModal.classList.remove('hidden');
+            }
+        });
+        cancelEditService.addEventListener('click', () => {
+            editServiceModal.classList.add('hidden');
+            editServiceForm.reset();
+        });
+        editServiceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = editServiceId.value;
+            const name = editServiceName.value;
+            const url = editServiceUrl.value;
+            try {
+                const response = await fetch(`/api/services/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, url })
+                });
+                if (response.ok) {
+                    editServiceModal.classList.add('hidden');
+                    editServiceForm.reset();
+                    loadServices();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.error || 'No se pudo actualizar el servicio.'));
+                }
+            } catch (err) {
+                alert('Error de red o servidor.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -66,19 +66,28 @@ router.post('/login', function (req, res) { return __awaiter(void 0, void 0, voi
                 if (passwordMatch) {
                     session = (0, session_1.createSession)(user.id);
                     console.log('[LOGIN] Sesión creada:', session.id);
-                    res.cookie('sessionId', session.id, { httpOnly: true, sameSite: 'strict' });
-                    res.status(200).send({ message: 'Logged in' });
+                    // CAMBIO CRÍTICO: Configurar cookie correctamente para proxy
+                    res.cookie('sessionId', session.id, {
+                        httpOnly: true,
+                        sameSite: 'lax', // Cambiar de 'strict' a 'lax'
+                        secure: false, // Nginx maneja el SSL, no la app
+                        path: '/' // Asegurar que la cookie funciona en todas las rutas
+                    });
+                    res.status(200).json({
+                        message: 'Logged in',
+                        redirect: '/admin' // Indicar al frontend donde redirigir
+                    });
                     return [2 /*return*/];
                 }
                 _b.label = 4;
             case 4:
                 console.log('[LOGIN] Credenciales inválidas');
-                res.status(401).send({ error: 'Invalid credentials' });
+                res.status(401).json({ error: 'Invalid credentials' });
                 return [3 /*break*/, 6];
             case 5:
                 err_1 = _b.sent();
                 console.error('[LOGIN] Error en login:', err_1);
-                res.status(500).send({ error: 'Internal server error' });
+                res.status(500).json({ error: 'Internal server error' });
                 return [3 /*break*/, 6];
             case 6: return [2 /*return*/];
         }

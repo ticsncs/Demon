@@ -49,6 +49,8 @@ var path_1 = __importDefault(require("path"));
 var session_1 = require("./domain/session");
 var app = (0, express_1.default)();
 var port = 3000;
+// IMPORTANTE: Confiar en el proxy (Nginx)
+app.set('trust proxy', 1);
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
@@ -58,31 +60,35 @@ app.get('/health', function (_req, res) {
 });
 // --- Public Routes for Login ---
 app.get('/admin/login', function (_req, res) {
-    res.sendFile(path_1.default.join(__dirname, 'infra/web', 'login.html'));
+    res.sendFile(path_1.default.join(__dirname, 'infra/web/login.html'));
 });
 app.use('/admin', login_1.default);
 // --- Middleware for Protected Admin Routes ---
 var authMiddleware = function (req, res, next) {
     var sessionId = req.cookies.sessionId;
+    console.log('[AUTH] Cookie recibida:', sessionId);
     var session = (0, session_1.getSession)(sessionId);
+    console.log('[AUTH] Sesión encontrada:', !!session);
     if (session) {
         next();
     }
     else {
+        console.log('[AUTH] Redirigiendo a login');
         res.redirect('/admin/login');
     }
 };
 // --- Protected Admin Routes ---
 app.get('/admin', authMiddleware, function (_req, res) {
-    res.sendFile(path_1.default.join(__dirname, 'infra/web', 'admin.html'));
+    console.log('[ADMIN] Sirviendo panel de administración');
+    res.sendFile(path_1.default.join(__dirname, 'infra/web/admin.html'));
 });
 app.post('/admin/logout', authMiddleware, function (req, res) {
     var sessionId = req.cookies.sessionId;
     (0, session_1.removeSession)(sessionId);
     res.clearCookie('sessionId');
-    res.status(200).send({ message: 'Logged out' });
+    res.status(200).json({ message: 'Logged out' });
 });
-// --- API Routes (can have their own auth) ---
+// --- API Routes ---
 app.use('/api', api_1.default);
 // --- Server Initialization ---
 function startServer() {
