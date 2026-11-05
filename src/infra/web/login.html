@@ -35,27 +35,32 @@
 
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
-
-            const response = await fetch('/admin/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (response.ok) {
-                window.location.href = '/admin';
-            } else {
-                const data = await response.json();
-                errorMessage.textContent = data.error || 'Invalid credentials';
-                errorMessage.classList.remove('hidden');
-            }
-        });
+  e.preventDefault();
+  
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  
+  try {
+    const response = await fetch('/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      credentials: 'include'  // IMPORTANTE: Incluir cookies
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Redirigir al panel de admin
+      window.location.href = data.redirect || '/admin';
+    } else {
+      alert(data.error || 'Login failed');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Network error');
+  }
+});
     </script>
 </body>
 </html>

@@ -123,13 +123,12 @@ router.post('/config', async (req, res) => {
       return res.status(404).json({ error: 'Service not found' });
     }
 
-    jwt.verify(token, service.token, (err) => {
-      if (err) {
-        return res.status(401).json({ error: 'Invalid token' });
-      }
+    if (token !== service.token) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
 
-      res.json({ url: service.url });
-    });
+    res.json({ url: service.url });
+   
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

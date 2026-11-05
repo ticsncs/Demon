@@ -10,6 +10,9 @@ import { getSession, removeSession } from './domain/session';
 const app = express();
 const port = 3000;
 
+// IMPORTANTE: Confiar en el proxy (Nginx)
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
@@ -21,35 +24,41 @@ app.get('/health', (_req, res) => {
 
 // --- Public Routes for Login ---
 app.get('/admin/login', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'infra/web', 'login.html'));
+    res.sendFile(path.join(__dirname, 'infra/web/login.html'));
 });
+
 app.use('/admin', loginRouter);
 
 // --- Middleware for Protected Admin Routes ---
 const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const sessionId = req.cookies.sessionId;
+  console.log('[AUTH] Cookie recibida:', sessionId);
+  
   const session = getSession(sessionId);
-
+  console.log('[AUTH] Sesión encontrada:', !!session);
+  
   if (session) {
     next();
   } else {
+    console.log('[AUTH] Redirigiendo a login');
     res.redirect('/admin/login');
   }
 };
 
 // --- Protected Admin Routes ---
 app.get('/admin', authMiddleware, (_req, res) => {
-  res.sendFile(path.join(__dirname, 'infra/web', 'admin.html'));
+  console.log('[ADMIN] Sirviendo panel de administración');
+    res.sendFile(path.join(__dirname, 'infra/web/admin.html'));
 });
 
 app.post('/admin/logout', authMiddleware, (req, res) => {
   const sessionId = req.cookies.sessionId;
   removeSession(sessionId);
   res.clearCookie('sessionId');
-  res.status(200).send({ message: 'Logged out' });
+  res.status(200).json({ message: 'Logged out' });
 });
 
-// --- API Routes (can have their own auth) ---
+// --- API Routes ---
 app.use('/api', apiRouter);
 
 // --- Server Initialization ---
